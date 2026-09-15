@@ -34,6 +34,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
     panel.titleVisibility = .hidden
     panel.titlebarAppearsTransparent = true
+    // True widget look: no traffic lights. Keep .titled (resize + shadow)
+    // but hide the standard buttons — they'd otherwise float over content.
+    panel.standardWindowButton(.closeButton)?.isHidden = true
+    panel.standardWindowButton(.miniaturizeButton)?.isHidden = true
+    panel.standardWindowButton(.zoomButton)?.isHidden = true
     panel.isMovableByWindowBackground = true
     // Desktop-widget layer semantics: under working windows, never hides.
     panel.level = .normal

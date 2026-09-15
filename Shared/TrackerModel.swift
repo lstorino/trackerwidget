@@ -67,13 +67,15 @@ struct Market: Decodable, Identifiable {
 // MARK: - Loader (one fetch per tracker)
 
 enum Tracker {
-  case pig, shrimp, grains
+  case pig, shrimp, grains, chemicals
 
   var base: String {
     switch self {
     case .pig: return ProcessInfo.processInfo.environment["PIG_API_BASE"] ?? Secrets.pigBase
     case .shrimp: return ProcessInfo.processInfo.environment["SHRIMP_API_BASE"] ?? Secrets.shrimpBase
     case .grains: return ProcessInfo.processInfo.environment["GRAINS_API_BASE"] ?? Secrets.grainsBase
+    // Chemicals ride the grains backend (same ComexStat pipeline).
+    case .chemicals: return ProcessInfo.processInfo.environment["GRAINS_API_BASE"] ?? Secrets.grainsBase
     }
   }
 
@@ -82,6 +84,7 @@ enum Tracker {
     case .pig: return Secrets.pigToken
     case .shrimp: return Secrets.shrimpToken
     case .grains: return Secrets.grainsToken
+    case .chemicals: return Secrets.grainsToken
     }
   }
 
@@ -90,6 +93,7 @@ enum Tracker {
     case .pig: return "Pig"
     case .shrimp: return "Shrimp"
     case .grains: return "Grains"
+    case .chemicals: return "Chemicals"
     }
   }
 }

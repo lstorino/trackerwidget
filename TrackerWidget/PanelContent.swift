@@ -25,7 +25,8 @@ final class PanelViewModel: ObservableObject {
     switch selectedTab {
     case .pig: return pig
     case .shrimp: return shrimp
-    case .grains: return grains
+    // Chemicals rides the grains backend — same payload, filtered client-side.
+    case .grains, .chemicals: return grains
     }
   }
 
@@ -95,37 +96,49 @@ struct PanelContent: View {
     case .pig: return Theme.pig
     case .shrimp: return Theme.shrimp
     case .grains: return Theme.grains
+    case .chemicals: return Theme.chemicals
     }
   }
 
-  // MARK: Tab bar — emoji + name, active tab highlighted, same width slots
+  // MARK: Tab bar — SVG icons + name, active tab highlighted, same width slots
 
   private func tabBar(palette: Theme.Palette) -> some View {
     HStack(spacing: 0) {
-      tabButton(.pig, emoji: "🐷", label: "Pig", palette: palette)
-      tabButton(.shrimp, emoji: "🦐", label: "Shrimp", palette: palette)
-      tabButton(.grains, emoji: "🌾", label: "Grains", palette: palette)
+      tabButton(.pig, icon: "tab_pig", label: "Pig", palette: palette)
+      tabButton(.shrimp, icon: "tab_shrimp", label: "Shrimp", palette: palette)
+      tabButton(.grains, icon: "tab_grains", label: "Grains", palette: palette)
+      tabButton(.chemicals, icon: "tab_chemicals", label: "Chemicals", palette: palette)
     }
-    .frame(height: 30)
+    .frame(height: 40)
     .background(palette.surface)
     .overlay(Rectangle().fill(palette.border).frame(height: 0.5), alignment: .bottom)
   }
 
-  private func tabButton(_ tab: Tracker, emoji: String, label: String,
+  private func tabButton(_ tab: Tracker, icon: String, label: String,
                          palette: Theme.Palette) -> some View {
     let isActive = viewModel.selectedTab == tab
     return Button {
       viewModel.selectedTab = tab
     } label: {
-      VStack(spacing: 2) {
-        Text("\(emoji) \(label)")
-          .font(Theme.tabFont)
-          .foregroundStyle(isActive ? palette.text : palette.dim)
+      VStack(spacing: 3) {
+        HStack(spacing: 4) {
+          if let img = NSImage(named: icon) {
+            Image(nsImage: img)
+              .resizable()
+              .renderingMode(.template)
+              .frame(width: 14, height: 14)
+              .foregroundStyle(isActive ? palette.text : palette.dim)
+          }
+          Text(label)
+            .font(Theme.tabFont)
+            .foregroundStyle(isActive ? palette.text : palette.dim)
+        }
         Rectangle()
           .fill(isActive ? palette.accent : Color.clear)
           .frame(height: 2)
       }
       .frame(maxWidth: .infinity)
+      .padding(.top, 6)
       .contentShape(Rectangle())
     }
     .buttonStyle(.plain)
@@ -181,11 +194,19 @@ private struct MasterLayout: View {
     .background(palette.background)
   }
 
-  // Header: tracker-specific title + shared unit label
+  // Header: tracker-specific title (with icon) + shared unit label.
+  // Title zone 30% taller per user request.
   private var header: some View {
-    HStack(spacing: 6) {
+    HStack(spacing: 8) {
+      if let img = NSImage(named: headerIcon) {
+        Image(nsImage: img)
+          .resizable()
+          .renderingMode(.template)
+          .frame(width: 18, height: 18)
+          .foregroundStyle(palette.text)   // matches the tab font color
+      }
       Text(headerTitle)
-        .font(.system(size: 14, weight: .bold))
+        .font(.system(size: 18, weight: .bold))
         .foregroundStyle(palette.text)
       Spacer()
       Text(headerUnit)
@@ -193,20 +214,34 @@ private struct MasterLayout: View {
         .foregroundStyle(palette.dim)
     }
     .padding(.horizontal, 14)
-    .padding(.top, 12)
-    .padding(.bottom, 8)
+    .padding(.top, 16)
+    .padding(.bottom, 10)
+  }
+
+  private var headerIcon: String {
+    switch tracker {
+    case .pig: return "tab_pig"
+    case .shrimp: return "tab_shrimp"
+    case .grains: return "tab_grains"
+    case .chemicals: return "tab_chemicals"
+    }
   }
 
   private var headerTitle: String {
     switch tracker {
-    case .pig: return "🐷 Pig Prices"
-    case .shrimp: return "🦐 Shrimp Prices"
-    case .grains: return "🌾 Grains FOB"
+    case .pig: return "Pig Prices"
+    case .shrimp: return "Shrimp Prices"
+    case .grains: return "Grains FOB"
+    case .chemicals: return "Chemicals FOB"
     }
   }
 
   private var headerUnit: String {
-    tracker == .grains ? "USD/MT · Brazil → ASEAN" : "USD/kg"
+    switch tracker {
+    case .pig: return "USD/kg"
+    case .shrimp: return "USD/kg"
+    case .grains, .chemicals: return "USD/MT · Brazil → ASEAN"
+    }
   }
 
   // MARK: Sections — per-tracker grouping logic, same rendering after this
@@ -228,23 +263,59 @@ private struct MasterLayout: View {
       return rows.isEmpty ? [] : [("VANNAMEI 30 PCS/KG · FARM GATE", rows)]
 
     case .grains:
-      // Product sections with emoji, rows by destination
-      let grouped = Dictionary(grouping: payload.markets, by: { $0.category })
-      let emoji: [String: String] = ["CORN": "🌽", "SOYBEANS": "🫛",
-                                     "SOY MEAL": "🌾", "SOY PROTEIN": "🛢️",
-                                     "COTTONSEED MEAL": "☁️"]
-      return ["CORN", "SOYBEANS", "SOY MEAL", "SOY PROTEIN", "COTTONSEED MEAL"]
-        .compactMap { cat in
-          guard let rows = grouped[cat], !rows.isEmpty else { return nil }
-          let sorted = rows.sorted { ($0.usdPerKg ?? 0) > ($1.usdPerKg ?? 0) }
-          return ("\(emoji[cat] ?? "•") \(cat)", sorted)
-        }
+      // Product sections with icons, rows by destination
+      let grainsCats = ["CORN", "SOYBEANS", "SOY MEAL", "SOY PROTEIN", "COTTONSEED MEAL"]
+      let rows = payload.markets.filter { grainsCats.contains($0.category) }
+      let grouped = Dictionary(grouping: rows, by: { $0.category })
+      let icons: [String: String] = ["CORN": "prod_corn", "SOYBEANS": "prod_soybeans",
+                                     "SOY MEAL": "prod_soymeal", "SOY PROTEIN": "prod_soy_protein",
+                                     "COTTONSEED MEAL": "prod_cottonseed"]
+      return grainsCats.compactMap { cat in
+        guard let catRows = grouped[cat], !catRows.isEmpty else { return nil }
+        let sorted = catRows.sorted { ($0.usdPerKg ?? 0) > ($1.usdPerKg ?? 0) }
+        return ("\(icons[cat] ?? "prod_corn")|\(cat)", sorted)
+      }
+
+    case .chemicals:
+      // Three chemicals, rows by destination
+      let chemCats = ["PURE GLYCERIN", "CRUDE GLYCERIN", "LECITHINS"]
+      let rows = payload.markets.filter { chemCats.contains($0.category) }
+      let grouped = Dictionary(grouping: rows, by: { $0.category })
+      let icons: [String: String] = ["PURE GLYCERIN": "prod_glycerin_refined",
+                                     "CRUDE GLYCERIN": "prod_glycerin_crude",
+                                     "LECITHINS": "prod_lecithin"]
+      return chemCats.compactMap { cat in
+        guard let catRows = grouped[cat], !catRows.isEmpty else { return nil }
+        let sorted = catRows.sorted { ($0.usdPerKg ?? 0) > ($1.usdPerKg ?? 0) }
+        return ("\(icons[cat] ?? "prod_lecithin")|\(cat)", sorted)
+      }
     }
   }
 
+  /// Section header renders "icon|Category" tuples: icon asset + label.
+  /// Colored product icons (user-specified colors) render original;
+  /// everything else tints with the palette.
+  private func isColoredIcon(_ name: String) -> Bool {
+    name.contains("glycerin")
+  }
+
   private func sectionHeader(_ title: String, count: Int) -> some View {
-    HStack {
-      Text(title)
+    let parts = title.split(separator: "|", maxSplits: 1).map(String.init)
+    let iconName = parts.count == 2 ? parts[0] : nil
+    let label = parts.count == 2 ? parts[1] : title
+    return HStack {
+      if let iconName, let img = NSImage(named: iconName) {
+        let icon = Image(nsImage: img)
+          .resizable()
+          .renderingMode(isColoredIcon(iconName) ? .original : .template)
+          .frame(width: 12, height: 12)
+        if isColoredIcon(iconName) {
+          icon   // user's colors (brown / light yellow) render as authored
+        } else {
+          icon.foregroundStyle(palette.dim)   // matches the section label color
+        }
+      }
+      Text(label)
         .font(Theme.sectionFont)
         .foregroundStyle(palette.dim)
       Spacer()
@@ -274,7 +345,7 @@ private struct MasterLayout: View {
     switch tracker {
     case .pig: return "2x/day source"
     case .shrimp: return "weekly source"
-    case .grains: return "monthly source"
+    case .grains, .chemicals: return "monthly source"
     }
   }
 }
@@ -339,12 +410,14 @@ private struct MarketRow: View {
     .help(helpText)
   }
 
-  private var priceWidth: CGFloat { tracker == .grains ? 52 : 62 }
+  private var priceWidth: CGFloat {
+    (tracker == .grains || tracker == .chemicals) ? 52 : 62
+  }
 
   private var priceText: String {
     guard let usd = market.usdPerKg else { return "—" }
-    // Grains tab quotes USD/MT (bulk convention); API serves usd_per_kg.
-    if tracker == .grains {
+    // Grains + Chemicals tabs quote USD/MT (bulk/lot convention); API serves usd_per_kg.
+    if tracker == .grains || tracker == .chemicals {
       return String(format: "%.1f", usd * 1000)
     }
     return String(format: "%.2f", usd)
@@ -382,7 +455,7 @@ private struct MarketRow: View {
       "\(market.priceDate)",
     ]
     if let usd = market.usdPerKg {
-      lines.append(tracker == .grains
+      lines.append((tracker == .grains || tracker == .chemicals)
         ? "USD/MT: \(String(format: "%.1f", usd * 1000)) · USD/kg: \(String(format: "%.4f", usd))"
         : "USD/kg: \(String(format: "%.3f", usd))")
     }

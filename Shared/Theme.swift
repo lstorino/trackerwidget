@@ -64,6 +64,18 @@ enum Theme {
     inactiveTabBg: Color.white.opacity(0.03)
   )
 
+  static let chemicals = Palette(
+    background: Color(nsColor: NSColor(red: 0.07, green: 0.16, blue: 0.18, alpha: 1)),  // deep teal-navy
+    surface:   Color(nsColor: NSColor(red: 0.05, green: 0.12, blue: 0.14, alpha: 1)),
+    border: Color.white.opacity(0.10),
+    text: Color.white.opacity(0.94),
+    dim: Color.white.opacity(0.50),
+    faint: Color.white.opacity(0.28),
+    accent: Color(red: 0.35, green: 0.78, blue: 0.76),   // seafoam
+    activeTabBg: Color.white.opacity(0.10),
+    inactiveTabBg: Color.white.opacity(0.03)
+  )
+
   /// Maps an ISO country code to an emoji flag.
   /// Regional Indicator A..Z = U+1F1E6..U+1F1FF, i.e. 0x1F1E6 + (letter - 'A').
   static func flagEmoji(_ code: String) -> String {

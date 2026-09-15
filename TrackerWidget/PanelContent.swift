@@ -231,8 +231,9 @@ private struct MasterLayout: View {
       // Product sections with emoji, rows by destination
       let grouped = Dictionary(grouping: payload.markets, by: { $0.category })
       let emoji: [String: String] = ["CORN": "🌽", "SOYBEANS": "🫛",
-                                     "SOY MEAL": "🌾", "SOY PROTEIN": "🛢️"]
-      return ["CORN", "SOYBEANS", "SOY MEAL", "SOY PROTEIN"]
+                                     "SOY MEAL": "🌾", "SOY PROTEIN": "🛢️",
+                                     "COTTONSEED MEAL": "☁️"]
+      return ["CORN", "SOYBEANS", "SOY MEAL", "SOY PROTEIN", "COTTONSEED MEAL"]
         .compactMap { cat in
           guard let rows = grouped[cat], !rows.isEmpty else { return nil }
           let sorted = rows.sorted { ($0.usdPerKg ?? 0) > ($1.usdPerKg ?? 0) }

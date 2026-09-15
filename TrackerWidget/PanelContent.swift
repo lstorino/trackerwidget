@@ -332,13 +332,68 @@ private struct MasterLayout: View {
     VStack(alignment: .leading, spacing: 2) {
       Rectangle().fill(palette.border).frame(height: 0.5)
         .padding(.horizontal, 14)
-      Text("updated \(payload.generatedAt.suffix(16)) UTC · \(payload.totalHistoryRows) history rows · \(cadence)")
-        .font(Theme.obsFont)
-        .foregroundStyle(palette.faint)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 7)
+      HStack(spacing: 0) {
+        Text("updated \(payload.generatedAt.suffix(16)) UTC · \(payload.totalHistoryRows) history rows · \(cadence)")
+          .font(Theme.obsFont)
+          .foregroundStyle(palette.faint)
+          .lineLimit(1)
+        Spacer()
+        actionButtons
+      }
+      .padding(.horizontal, 14)
+      .padding(.vertical, 6)
     }
     .background(palette.surface)
+  }
+
+  /// Two yellow square buttons in the lower-right corner of every tab:
+  /// screenshot (widget-cropped PNG) + Excel export (.xls to Desktop).
+  private var actionButtons: some View {
+    HStack(spacing: 8) {
+      Button {
+        WidgetActions.screenshot()
+      } label: {
+        actionIcon("act_screenshot", help: "Save widget screenshot to Desktop")
+      }
+      .buttonStyle(.plain)
+
+      Button {
+        WidgetActions.exportXls(tracker: tracker, sections: exportSections)
+      } label: {
+        actionIcon("act_excel", help: "Export listings to .xls on Desktop")
+      }
+      .buttonStyle(.plain)
+    }
+  }
+
+  private func actionIcon(_ name: String, help: String) -> some View {
+    Group {
+      if let img = NSImage(named: name) {
+        Image(nsImage: img)
+          .resizable()
+          .renderingMode(.template)
+          .frame(width: 13, height: 13)
+      }
+    }
+    .frame(width: 24, height: 24)
+    .background(
+      RoundedRectangle(cornerRadius: 5)
+        .fill(Color(red: 0.95, green: 0.75, blue: 0.10).opacity(0.16)) // yellow wash
+    )
+    .overlay(
+      RoundedRectangle(cornerRadius: 5)
+        .stroke(Color(red: 0.95, green: 0.75, blue: 0.10), lineWidth: 1.2) // yellow frame
+    )
+    .foregroundStyle(Color(red: 0.95, green: 0.75, blue: 0.10))            // yellow glyph
+    .help(help)
+  }
+
+  /// The sections as currently rendered (stripped of icon prefix) for export.
+  private var exportSections: [(String, [Market])] {
+    sections.map { (title, rows) in
+      let clean = title.split(separator: "|", maxSplits: 1).last.map(String.init) ?? title
+      return (clean, rows)
+    }
   }
 
   private var cadence: String {

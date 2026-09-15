@@ -48,6 +48,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     panel.isOpaque = false
     panel.hasShadow = true
     panel.contentView = hosting
+    WidgetActions.panel = panel
     panel.center()
     panel.orderFrontRegardless()
 
@@ -59,6 +60,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let menu = NSMenu()
     menu.addItem(NSMenuItem(title: "Show / Hide Panel", action: #selector(togglePanel), keyEquivalent: ""))
     menu.addItem(NSMenuItem(title: "Refresh Now", action: #selector(refresh), keyEquivalent: "r"))
+    menu.addItem(NSMenuItem(title: "Save Screenshot to Desktop", action: #selector(screenshot), keyEquivalent: "s"))
+    menu.addItem(NSMenuItem(title: "Export .xls to Desktop", action: #selector(exportXls), keyEquivalent: "e"))
     let loginItem = NSMenuItem(title: "Launch at Login", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
     loginItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
     menu.addItem(loginItem)
@@ -79,6 +82,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   @objc private func refresh() {
     viewModel.refreshAll()
+  }
+
+  @objc private func screenshot() {
+    WidgetActions.screenshot()
+  }
+
+  @objc private func exportXls() {
+    let tracker = viewModel.selectedTab
+    if let payload = viewModel.payloadForSelected {
+      WidgetActions.exportXls(tracker: tracker, sections: sectionsFor(tracker, payload))
+    }
+  }
+
+  /// Same grouping the visible panel uses (kept in one place for the export).
+  private func sectionsFor(_ tracker: Tracker, _ payload: PricesPayload) -> [(String, [Market])] {
+    switch tracker {
+    case .pig:
+      let rows = payload.markets
+        .filter { $0.category == "FATTENING PIGS" }
+        .sorted { ($0.usdPerKg ?? 0) > ($1.usdPerKg ?? 0) }
+      let grouped = Dictionary(grouping: rows, by: { $0.region })
+      return ["Europe", "America", "Asia", "Africa"]
+        .compactMap { r in grouped[r].map { (r, $0) } }
+    case .shrimp:
+      let rows = payload.markets.sorted { ($0.usdPerKg ?? 0) > ($1.usdPerKg ?? 0) }
+      return rows.isEmpty ? [] : [("VANNAMEI 30 PCS/KG", rows)]
+    case .grains:
+      let cats = ["CORN", "SOYBEANS", "SOY MEAL", "SOY PROTEIN", "COTTONSEED MEAL"]
+      let grouped = Dictionary(grouping: payload.markets.filter { cats.contains($0.category) },
+                               by: { $0.category })
+      return cats.compactMap { c in grouped[c].map { (c, $0.sorted { ($0.usdPerKg ?? 0) > ($1.usdPerKg ?? 0) }) } }
+    case .chemicals:
+      let cats = ["PURE GLYCERIN", "CRUDE GLYCERIN", "LECITHINS"]
+      let grouped = Dictionary(grouping: payload.markets.filter { cats.contains($0.category) },
+                               by: { $0.category })
+      return cats.compactMap { c in grouped[c].map { (c, $0.sorted { ($0.usdPerKg ?? 0) > ($1.usdPerKg ?? 0) }) } }
+    }
   }
 
   @objc private func toggleLaunchAtLogin() {

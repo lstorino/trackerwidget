@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1B3252"/>
+      <stop offset="0.55" stop-color="#101E33"/>
+      <stop offset="1" stop-color="#0A1220"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.10"/>
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#25415F"/>
+      <stop offset="1" stop-color="#18293F"/>
+    </linearGradient>
+    <linearGradient id="drop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7FDCCE"/>
+      <stop offset="1" stop-color="#35A794"/>
+    </linearGradient>
+  </defs>
+
+  <!-- macOS squircle -->
+  <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#bg)"/>
+  <rect x="100" y="100" width="824" height="824" rx="186" fill="none" stroke="#5E7EA6" stroke-opacity="0.55" stroke-width="12"/>
+  <rect x="114" y="114" width="796" height="796" rx="175" fill="url(#shine)"/>
+
+  <!-- 2x2 product tiles -->
+  <rect x="202" y="202" width="280" height="280" rx="64" fill="url(#tile)" stroke="#3D5C85" stroke-opacity="0.5" stroke-width="4"/>
+  <rect x="542" y="202" width="280" height="280" rx="64" fill="url(#tile)" stroke="#3D5C85" stroke-opacity="0.5" stroke-width="4"/>
+  <rect x="202" y="542" width="280" height="280" rx="64" fill="url(#tile)" stroke="#3D5C85" stroke-opacity="0.5" stroke-width="4"/>
+  <rect x="542" y="542" width="280" height="280" rx="64" fill="url(#tile)" stroke="#3D5C85" stroke-opacity="0.5" stroke-width="4"/>
+
+  <!-- PIG -->
+  <g transform="translate(342,356)">
+    <path d="M -52 -48 L -84 -102 L -18 -72 Z" fill="#E88FAC" stroke="#E88FAC" stroke-width="10" stroke-linejoin="round"/>
+    <path d="M 52 -48 L 84 -102 L 18 -72 Z" fill="#E88FAC" stroke="#E88FAC" stroke-width="10" stroke-linejoin="round"/>
+    <circle cx="0" cy="8" r="76" fill="#F5AEC4"/>
+    <circle cx="-32" cy="-12" r="9" fill="#22344E"/>
+    <circle cx="32" cy="-12" r="9" fill="#22344E"/>
+    <ellipse cx="0" cy="44" rx="36" ry="27" fill="#FBC9D8"/>
+    <circle cx="-14" cy="44" r="6.5" fill="#C97A9B"/>
+    <circle cx="14" cy="44" r="6.5" fill="#C97A9B"/>
+  </g>
+
+  <!-- SHRIMP -->
+  <g transform="translate(682,352)" stroke="#F58A5A" fill="none" stroke-linecap="round">
+    <path d="M -58 -62 C -20 -92 36 -72 44 -28 C 50 6 32 38 0 52" stroke-width="30"/>
+    <path d="M -58 -62 L -96 -78" stroke-width="12"/>
+    <path d="M -58 -62 L -88 -100" stroke-width="12"/>
+    <path d="M -58 -62 L -50 -98" stroke-width="12"/>
+    <path d="M 0 52 C 26 62 52 56 68 40" stroke-width="8"/>
+    <path d="M 0 52 C 22 74 46 80 66 76" stroke-width="8"/>
+    <circle cx="17" cy="42" r="7" fill="#22344E" stroke="none"/>
+  </g>
+
+  <!-- CORN -->
+  <g transform="translate(342,684)">
+    <path d="M -8 92 C -55 82 -75 40 -66 -2 C -40 22 -14 45 -8 62 Z" fill="#5BB374"/>
+    <path d="M 8 92 C 55 82 75 40 66 -2 C 40 22 14 45 8 62 Z" fill="#4EA866"/>
+    <ellipse cx="0" cy="-8" rx="54" ry="88" fill="#F6C845"/>
+    <g fill="#E3B02F">
+      <circle cx="-28" cy="-56" r="6.5"/><circle cx="0" cy="-56" r="6.5"/><circle cx="28" cy="-56" r="6.5"/>
+      <circle cx="-28" cy="-28" r="6.5"/><circle cx="0" cy="-28" r="6.5"/><circle cx="28" cy="-28" r="6.5"/>
+      <circle cx="-28" cy="0" r="6.5"/><circle cx="0" cy="0" r="6.5"/><circle cx="28" cy="0" r="6.5"/>
+      <circle cx="-28" cy="28" r="6.5"/><circle cx="0" cy="28" r="6.5"/><circle cx="28" cy="28" r="6.5"/>
+      <circle cx="-28" cy="52" r="6.5"/><circle cx="0" cy="52" r="6.5"/><circle cx="28" cy="52" r="6.5"/>
+    </g>
+  </g>
+
+  <!-- GLYCERIN DROPLET -->
+  <g transform="translate(682,682)">
+    <path d="M 0 -96 C 30 -56 68 -20 68 28 A 68 68 0 1 1 -68 28 C -68 -20 -30 -56 0 -96 Z" fill="url(#drop)"/>
+    <ellipse cx="-26" cy="30" rx="13" ry="24" fill="#FFFFFF" fill-opacity="0.35" transform="rotate(-18 -26 30)"/>
+  </g>
+</svg>

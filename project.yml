@@ -16,6 +16,7 @@ targets:
       properties:
         NSPrincipalClass: NSApplication
         LSUIElement: true
+        CFBundleIconFile: AppIcon
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: false
     settings:

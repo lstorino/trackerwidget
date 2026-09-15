@@ -9,6 +9,8 @@ final class PanelViewModel: ObservableObject {
   @Published var shrimp: PricesPayload?
   @Published var grains: PricesPayload?
   @Published var failed = false
+  /// Origin sub-tab for the grains/chemicals tabs: Brazil or US.
+  @Published var origin: String = "BR"
 
   private var timer: Timer?
   private var fastRetry: Timer?
@@ -72,10 +74,14 @@ struct PanelContent: View {
     let palette = paletteFor(viewModel.selectedTab)
     VStack(spacing: 0) {
       tabBar(palette: palette)
+      if viewModel.selectedTab == .grains || viewModel.selectedTab == .chemicals {
+        originBar(palette: palette)
+      }
       ZStack {
         palette.background.ignoresSafeArea()
         if let payload = viewModel.payloadForSelected {
-          MasterLayout(payload: payload, tracker: viewModel.selectedTab, palette: palette)
+          MasterLayout(payload: payload, tracker: viewModel.selectedTab,
+                       palette: palette, origin: viewModel.origin)
         } else if viewModel.failed {
           FailureView(palette: palette)
         } else {
@@ -98,6 +104,47 @@ struct PanelContent: View {
     case .grains: return Theme.grains
     case .chemicals: return Theme.chemicals
     }
+  }
+
+  /// Origin sub-tabs (grains/chemicals): 🇧🇷 Brazil / 🇺🇸 US.
+  private func originBar(palette: Theme.Palette) -> some View {
+    HStack(spacing: 8) {
+      originButton(code: "BR", flag: "🇧🇷", label: "Brazil", palette: palette)
+      originButton(code: "US", flag: "🇺🇸", label: "US", palette: palette)
+      Spacer()
+      Text("Origin")
+        .font(Theme.obsFont)
+        .foregroundStyle(palette.faint)
+    }
+    .padding(.horizontal, 14)
+    .padding(.vertical, 5)
+    .background(palette.surface)
+    .overlay(Rectangle().fill(palette.border).frame(height: 0.5), alignment: .bottom)
+  }
+
+  private func originButton(code: String, flag: String, label: String,
+                           palette: Theme.Palette) -> some View {
+    let isActive = viewModel.origin == code
+    return Button {
+      viewModel.origin = code
+    } label: {
+      HStack(spacing: 4) {
+        Text(flag).font(.system(size: 12))
+        Text(label).font(Theme.sectionFont)
+      }
+      .foregroundStyle(isActive ? palette.text : palette.dim)
+      .padding(.horizontal, 8)
+      .padding(.vertical, 3)
+      .background(
+        RoundedRectangle(cornerRadius: 6)
+          .fill(isActive ? palette.activeTabBg : Color.clear)
+      )
+      .overlay(
+        RoundedRectangle(cornerRadius: 6)
+          .stroke(isActive ? palette.accent : Color.clear, lineWidth: 1)
+      )
+    }
+    .buttonStyle(.plain)
   }
 
   // MARK: Tab bar — SVG icons + name, active tab highlighted, same width slots
@@ -174,6 +221,7 @@ private struct MasterLayout: View {
   let payload: PricesPayload
   let tracker: Tracker
   let palette: Theme.Palette
+  let origin: String
 
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
@@ -240,7 +288,8 @@ private struct MasterLayout: View {
     switch tracker {
     case .pig: return "USD/kg"
     case .shrimp: return "USD/kg"
-    case .grains, .chemicals: return "USD/MT · Brazil → ASEAN"
+    case .grains, .chemicals:
+      return origin == "US" ? "USD/MT · US Origin" : "USD/MT · Brazil → ASEAN"
     }
   }
 
@@ -263,9 +312,11 @@ private struct MasterLayout: View {
       return rows.isEmpty ? [] : [("VANNAMEI 30 PCS/KG · FARM GATE", rows)]
 
     case .grains:
-      // Product sections with icons, rows by destination
+      // Product sections with icons, rows by destination, filtered by origin
       let grainsCats = ["CORN", "SOYBEANS", "SOY MEAL", "SOY PROTEIN", "COTTONSEED MEAL"]
-      let rows = payload.markets.filter { grainsCats.contains($0.category) }
+      let rows = payload.markets.filter {
+        grainsCats.contains($0.category) && matchesOrigin($0)
+      }
       let grouped = Dictionary(grouping: rows, by: { $0.category })
       let icons: [String: String] = ["CORN": "prod_corn", "SOYBEANS": "prod_soybeans",
                                      "SOY MEAL": "prod_soymeal", "SOY PROTEIN": "prod_soy_protein",
@@ -277,9 +328,11 @@ private struct MasterLayout: View {
       }
 
     case .chemicals:
-      // Three chemicals, rows by destination
+      // Three chemicals, rows by destination, filtered by origin
       let chemCats = ["PURE GLYCERIN", "CRUDE GLYCERIN", "LECITHINS"]
-      let rows = payload.markets.filter { chemCats.contains($0.category) }
+      let rows = payload.markets.filter {
+        chemCats.contains($0.category) && matchesOrigin($0)
+      }
       let grouped = Dictionary(grouping: rows, by: { $0.category })
       let icons: [String: String] = ["PURE GLYCERIN": "prod_glycerin_refined",
                                      "CRUDE GLYCERIN": "prod_glycerin_crude",
@@ -290,6 +343,12 @@ private struct MasterLayout: View {
         return ("\(icons[cat] ?? "prod_lecithin")|\(cat)", sorted)
       }
     }
+  }
+
+  /// Rows carry optional origin ("BR"/"US"); legacy rows without origin
+  /// count as Brazil (the pipeline's original origin).
+  private func matchesOrigin(_ m: Market) -> Bool {
+    (m.origin ?? "BR") == origin
   }
 
   /// Section header renders "icon|Category" tuples: icon asset + label.

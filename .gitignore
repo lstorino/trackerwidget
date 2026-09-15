@@ -4,3 +4,4 @@ Shared/Secrets.swift
 # macOS / exFAT noise
 .DS_Store
 ._*
+TrackerWidget.xcodeproj/

@@ -91,12 +91,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   @objc private func exportXls() {
     let tracker = viewModel.selectedTab
     if let payload = viewModel.payloadForSelected {
-      WidgetActions.exportXls(tracker: tracker, sections: sectionsFor(tracker, payload))
+      WidgetActions.exportXls(tracker: tracker,
+                              sections: sectionsFor(tracker, payload, origin: viewModel.origin))
     }
   }
 
   /// Same grouping the visible panel uses (kept in one place for the export).
-  private func sectionsFor(_ tracker: Tracker, _ payload: PricesPayload) -> [(String, [Market])] {
+  private func sectionsFor(_ tracker: Tracker, _ payload: PricesPayload,
+                           origin: String) -> [(String, [Market])] {
+    // Rows without an origin field predate the US pipeline — treat as Brazil,
+    // matching MasterLayout.matchesOrigin.
+    let matchesOrigin = { (m: Market) in (m.origin ?? "BR") == origin }
     switch tracker {
     case .pig:
       let rows = payload.markets
@@ -110,12 +115,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       return rows.isEmpty ? [] : [("VANNAMEI 30 PCS/KG", rows)]
     case .grains:
       let cats = ["CORN", "SOYBEANS", "SOY MEAL", "SOY PROTEIN", "COTTONSEED MEAL"]
-      let grouped = Dictionary(grouping: payload.markets.filter { cats.contains($0.category) },
+      let grouped = Dictionary(grouping: payload.markets.filter { cats.contains($0.category) && matchesOrigin($0) },
                                by: { $0.category })
       return cats.compactMap { c in grouped[c].map { (c, $0.sorted { ($0.usdPerKg ?? 0) > ($1.usdPerKg ?? 0) }) } }
     case .chemicals:
       let cats = ["PURE GLYCERIN", "CRUDE GLYCERIN", "LECITHINS"]
-      let grouped = Dictionary(grouping: payload.markets.filter { cats.contains($0.category) },
+      let grouped = Dictionary(grouping: payload.markets.filter { cats.contains($0.category) && matchesOrigin($0) },
                                by: { $0.category })
       return cats.compactMap { c in grouped[c].map { (c, $0.sorted { ($0.usdPerKg ?? 0) > ($1.usdPerKg ?? 0) }) } }
     }

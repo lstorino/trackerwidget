@@ -32,6 +32,7 @@ struct Market: Decodable, Identifiable {
   let flag: String
   let region: String
   let category: String
+  let origin: String?      // "BR" (Brazil) | "US" — older rows lack it
 
   var id: Int { marketId }
 
@@ -43,7 +44,7 @@ struct Market: Decodable, Identifiable {
     case usdPerKg = "usd_per_kg"
     case reference, variation, delta
     case deltaClass = "delta_class"
-    case country, flag, region, category
+    case country, flag, region, category, origin
   }
 
   var variationPercent: Double? {

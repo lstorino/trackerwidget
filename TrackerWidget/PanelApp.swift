@@ -69,6 +69,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     menu.addItem(NSMenuItem(title: "Quit Price Trackers", action: #selector(NSApplication.terminate), keyEquivalent: "q"))
     statusItem.menu = menu
 
+    // Accessory apps have no main menu, so the standard ⌘Q shortcut is
+    // unbound whenever the panel holds focus — bind it explicitly.
+    NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+      if event.modifierFlags.contains(.command),
+         event.charactersIgnoringModifiers?.lowercased() == "q" {
+        NSApp.terminate(nil)
+        return nil
+      }
+      return event
+    }
+
     viewModel.refreshAll()
   }
 

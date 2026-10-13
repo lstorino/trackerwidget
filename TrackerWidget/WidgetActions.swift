@@ -83,6 +83,7 @@ enum WidgetActions {
       <Cell ss:StyleID="hdr"><Data ss:Type="String">USD/MT</Data></Cell>\
       <Cell ss:StyleID="hdr"><Data ss:Type="String">Period</Data></Cell>\
       <Cell ss:StyleID="hdr"><Data ss:Type="String">Change %</Data></Cell>\
+      <Cell ss:StyleID="hdr"><Data ss:Type="String">Source</Data></Cell>\
       <Cell ss:StyleID="hdr"><Data ss:Type="String">Reference</Data></Cell></Row>
       """)
 
@@ -103,13 +104,14 @@ enum WidgetActions {
         cells.append(cell("String", mt))
         cells.append(cell("String", m.priceDate))
         cells.append(cell("String", m.variation ?? ""))
+        cells.append(cell("String", m.source ?? ""))
         cells.append(cell("String", m.reference))
         rows.append("<Row>\(cells.joined())</Row>")
       }
     }
 
-    let colWidths = (1...9).map { i in
-      "<Column ss:Index=\"\(i)\" ss:AutoFitWidth=\"0\" ss:Width=\"\(i == 9 ? 220 : i == 4 ? 110 : 90)\"/>"
+    let colWidths = (1...10).map { i in
+      "<Column ss:Index=\"\(i)\" ss:AutoFitWidth=\"0\" ss:Width=\"\(i == 10 ? 220 : i == 4 ? 110 : 90)\"/>"
     }.joined()
 
     return """

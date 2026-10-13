@@ -27,8 +27,9 @@ final class PanelViewModel: ObservableObject {
     switch selectedTab {
     case .pig: return pig
     case .shrimp: return shrimp
-    // Chemicals rides the grains backend — same payload, filtered client-side.
-    case .grains, .chemicals: return grains
+    // Chemicals/Ethanol/Tilapia ride the grains backend — same payload,
+    // filtered client-side.
+    case .grains, .chemicals, .ethanol, .tilapia: return grains
     }
   }
 
@@ -103,6 +104,8 @@ struct PanelContent: View {
     case .shrimp: return Theme.shrimp
     case .grains: return Theme.grains
     case .chemicals: return Theme.chemicals
+    case .ethanol: return Theme.ethanol
+    case .tilapia: return Theme.tilapia
     }
   }
 
@@ -133,8 +136,8 @@ struct PanelContent: View {
         Text(label).font(Theme.sectionFont)
       }
       .foregroundStyle(isActive ? palette.text : palette.dim)
-      .padding(.horizontal, 8)
-      .padding(.vertical, 3)
+      .frame(width: 84)                    // equal-size origin sub-tabs
+      .padding(.vertical, 4)
       .background(
         RoundedRectangle(cornerRadius: 6)
           .fill(isActive ? palette.activeTabBg : Color.clear)
@@ -151,17 +154,19 @@ struct PanelContent: View {
 
   private func tabBar(palette: Theme.Palette) -> some View {
     HStack(spacing: 0) {
-      tabButton(.pig, icon: "tab_pig", label: "Pig", palette: palette)
-      tabButton(.shrimp, icon: "tab_shrimp", label: "Shrimp", palette: palette)
-      tabButton(.grains, icon: "tab_grains", label: "Grains", palette: palette)
-      tabButton(.chemicals, icon: "tab_chemicals", label: "Chemicals", palette: palette)
+      tabButton(.pig, icon: "tab_pig", sf: "chart.line.downtrend.xyaxis", label: "Pig", palette: palette)
+      tabButton(.shrimp, icon: "tab_shrimp", sf: "shippingbox.fill", label: "Shrimp", palette: palette)
+      tabButton(.grains, icon: "tab_grains", sf: "chart.line.uptrend.xyaxis", label: "Grains", palette: palette)
+      tabButton(.chemicals, icon: "tab_chemicals", sf: "flask.fill", label: "Chem", palette: palette)
+      tabButton(.ethanol, icon: "", sf: "fuelpump.fill", label: "Ethanol", palette: palette)
+      tabButton(.tilapia, icon: "", sf: "fish.fill", label: "Tilapia", palette: palette)
     }
     .frame(height: 40)
     .background(palette.surface)
     .overlay(Rectangle().fill(palette.border).frame(height: 0.5), alignment: .bottom)
   }
 
-  private func tabButton(_ tab: Tracker, icon: String, label: String,
+  private func tabButton(_ tab: Tracker, icon: String, sf: String, label: String,
                          palette: Theme.Palette) -> some View {
     let isActive = viewModel.selectedTab == tab
     return Button {
@@ -169,11 +174,15 @@ struct PanelContent: View {
     } label: {
       VStack(spacing: 3) {
         HStack(spacing: 4) {
-          if let img = NSImage(named: icon) {
+          if !icon.isEmpty, let img = NSImage(named: icon) {
             Image(nsImage: img)
               .resizable()
               .renderingMode(.template)
               .frame(width: 14, height: 14)
+              .foregroundStyle(isActive ? palette.text : palette.dim)
+          } else {
+            Image(systemName: sf)
+              .font(.system(size: 12, weight: .semibold))
               .foregroundStyle(isActive ? palette.text : palette.dim)
           }
           Text(label)
@@ -272,6 +281,7 @@ private struct MasterLayout: View {
     case .shrimp: return "tab_shrimp"
     case .grains: return "tab_grains"
     case .chemicals: return "tab_chemicals"
+    case .ethanol, .tilapia: return ""   // SF-symbol tabs render no header asset
     }
   }
 
@@ -281,6 +291,8 @@ private struct MasterLayout: View {
     case .shrimp: return "Shrimp Prices"
     case .grains: return "Grains FOB"
     case .chemicals: return "Chemicals FOB"
+    case .ethanol: return "Ethanol Prices"
+    case .tilapia: return "Tilapia Prices"
     }
   }
 
@@ -290,6 +302,8 @@ private struct MasterLayout: View {
     case .shrimp: return "USD/kg"
     case .grains, .chemicals:
       return origin == "US" ? "USD/MT · US Origin" : "USD/MT · Brazil → ASEAN"
+    case .ethanol: return "USD/L · São Paulo"
+    case .tilapia: return "USD/kg · CEPEA"
     }
   }
 
@@ -312,26 +326,36 @@ private struct MasterLayout: View {
       return rows.isEmpty ? [] : [("VANNAMEI 30 PCS/KG · FARM GATE", rows)]
 
     case .grains:
-      // Product sections with icons, rows by destination, filtered by origin
+      // Product sections with icons, rows by destination, filtered by origin.
+      // CEPEA benchmark rows (source == "CEPEA") are not destination quotes —
+      // they render in their own section above.
       let grainsCats = ["CORN", "SOYBEANS", "SOY MEAL", "SOY PROTEIN", "COTTONSEED MEAL"]
       let rows = payload.markets.filter {
-        grainsCats.contains($0.category) && matchesOrigin($0)
+        grainsCats.contains($0.category) && matchesOrigin($0) && $0.source != "CEPEA"
       }
       let grouped = Dictionary(grouping: rows, by: { $0.category })
       let icons: [String: String] = ["CORN": "prod_corn", "SOYBEANS": "prod_soybeans",
                                      "SOY MEAL": "prod_soymeal", "SOY PROTEIN": "prod_soy_protein",
                                      "COTTONSEED MEAL": "prod_cottonseed"]
-      return grainsCats.compactMap { cat in
+      var out = grainsCats.compactMap { cat -> (String, [Market])? in
         guard let catRows = grouped[cat], !catRows.isEmpty else { return nil }
         let sorted = catRows.sorted { ($0.usdPerKg ?? 0) > ($1.usdPerKg ?? 0) }
         return ("\(icons[cat] ?? "prod_corn")|\(cat)", sorted)
       }
+      // CEPEA Paranaguá benchmark — Brazil sub-tab only, above the export quotes.
+      let cepeaSoy = payload.markets
+        .filter { $0.category == "SOYBEANS" && $0.source == "CEPEA" }
+        .sorted { $0.priceDate > $1.priceDate }
+      if origin == "BR" && !cepeaSoy.isEmpty {
+        out.insert(("prod_soybeans|SOYBEAN BENCHMARK · CEPEA", cepeaSoy), at: 0)
+      }
+      return out
 
     case .chemicals:
       // Three chemicals, rows by destination, filtered by origin
       let chemCats = ["PURE GLYCERIN", "CRUDE GLYCERIN", "LECITHINS"]
       let rows = payload.markets.filter {
-        chemCats.contains($0.category) && matchesOrigin($0)
+        chemCats.contains($0.category) && matchesOrigin($0) && $0.source != "CEPEA"
       }
       let grouped = Dictionary(grouping: rows, by: { $0.category })
       let icons: [String: String] = ["PURE GLYCERIN": "prod_glycerin_refined",
@@ -342,6 +366,20 @@ private struct MasterLayout: View {
         let sorted = catRows.sorted { ($0.usdPerKg ?? 0) > ($1.usdPerKg ?? 0) }
         return ("\(icons[cat] ?? "prod_lecithin")|\(cat)", sorted)
       }
+
+    case .ethanol:
+      // Single CEPEA market: hydrous ethanol (fuel), São Paulo, US$/liter.
+      let rows = payload.markets
+        .filter { $0.category == "ETHANOL" }
+        .sorted { $0.priceDate > $1.priceDate }
+      return rows.isEmpty ? [] : [("HYDROUS ETHANOL · SÃO PAULO", rows)]
+
+    case .tilapia:
+      // CEPEA tilapia prices, one row per producing region, US$/kg.
+      let rows = payload.markets
+        .filter { $0.category == "TILAPIA" }
+        .sorted { ($0.usdPerKg ?? 0) > ($1.usdPerKg ?? 0) }
+      return rows.isEmpty ? [] : [("TILAPIA · CEPEA WEEKLY", rows)]
     }
   }
 
@@ -460,6 +498,7 @@ private struct MasterLayout: View {
     case .pig: return "2x/day source"
     case .shrimp: return "weekly source"
     case .grains, .chemicals: return "monthly source"
+    case .ethanol, .tilapia: return "CEPEA weekly · CC BY-NC"
     }
   }
 }
@@ -525,10 +564,19 @@ private struct MarketRow: View {
   }
 
   private var priceWidth: CGFloat {
-    (tracker == .grains || tracker == .chemicals) ? 52 : 62
+    switch tracker {
+    case .grains, .chemicals: return 52
+    case .ethanol: return 48
+    case .pig, .shrimp, .tilapia: return 62
+    }
   }
 
   private var priceText: String {
+    // Ethanol quotes US$/liter straight from the source (CEPEA EN page).
+    if tracker == .ethanol {
+      return market.currency == "USD"
+        ? String(format: "%.3f", market.price) : String(format: "%.2f", market.price)
+    }
     guard let usd = market.usdPerKg else { return "—" }
     // Grains + Chemicals tabs quote USD/MT (bulk/lot convention); API serves usd_per_kg.
     if tracker == .grains || tracker == .chemicals {
@@ -568,7 +616,9 @@ private struct MarketRow: View {
       "\(market.country) — \(market.reference)",
       "\(market.priceDate)",
     ]
-    if let usd = market.usdPerKg {
+    if tracker == .ethanol {
+      lines.append("USD/L: \(String(format: "%.4f", market.price))")
+    } else if let usd = market.usdPerKg {
       lines.append((tracker == .grains || tracker == .chemicals)
         ? "USD/MT: \(String(format: "%.1f", usd * 1000)) · USD/kg: \(String(format: "%.4f", usd))"
         : "USD/kg: \(String(format: "%.3f", usd))")
@@ -578,6 +628,9 @@ private struct MarketRow: View {
     }
     if tracker == .pig && market.variationSuspect {
       lines.append("pig333 variation data suspect this week")
+    }
+    if market.source == "CEPEA" {
+      lines.append("Source: CEPEA — CC BY-NC 4.0")
     }
     return lines.joined(separator: "\n")
   }

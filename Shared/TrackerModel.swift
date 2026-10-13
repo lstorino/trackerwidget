@@ -33,6 +33,7 @@ struct Market: Decodable, Identifiable {
   let region: String
   let category: String
   let origin: String?      // "BR" (Brazil) | "US" — older rows lack it
+  let source: String?      // "COMEXSTAT" | "CENSUS" | "CEPEA" — older rows lack it
 
   var id: Int { marketId }
 
@@ -44,7 +45,7 @@ struct Market: Decodable, Identifiable {
     case usdPerKg = "usd_per_kg"
     case reference, variation, delta
     case deltaClass = "delta_class"
-    case country, flag, region, category, origin
+    case country, flag, region, category, origin, source
   }
 
   var variationPercent: Double? {
@@ -68,15 +69,15 @@ struct Market: Decodable, Identifiable {
 // MARK: - Loader (one fetch per tracker)
 
 enum Tracker {
-  case pig, shrimp, grains, chemicals
+  case pig, shrimp, grains, chemicals, ethanol, tilapia
 
   var base: String {
     switch self {
     case .pig: return ProcessInfo.processInfo.environment["PIG_API_BASE"] ?? Secrets.pigBase
     case .shrimp: return ProcessInfo.processInfo.environment["SHRIMP_API_BASE"] ?? Secrets.shrimpBase
     case .grains: return ProcessInfo.processInfo.environment["GRAINS_API_BASE"] ?? Secrets.grainsBase
-    // Chemicals ride the grains backend (same ComexStat pipeline).
-    case .chemicals: return ProcessInfo.processInfo.environment["GRAINS_API_BASE"] ?? Secrets.grainsBase
+    // Chemicals, Ethanol and Tilapia ride the grains backend (same pipeline).
+    case .chemicals, .ethanol, .tilapia: return ProcessInfo.processInfo.environment["GRAINS_API_BASE"] ?? Secrets.grainsBase
     }
   }
 
@@ -85,7 +86,7 @@ enum Tracker {
     case .pig: return Secrets.pigToken
     case .shrimp: return Secrets.shrimpToken
     case .grains: return Secrets.grainsToken
-    case .chemicals: return Secrets.grainsToken
+    case .chemicals, .ethanol, .tilapia: return Secrets.grainsToken
     }
   }
 
@@ -95,6 +96,8 @@ enum Tracker {
     case .shrimp: return "Shrimp"
     case .grains: return "Grains"
     case .chemicals: return "Chemicals"
+    case .ethanol: return "Ethanol"
+    case .tilapia: return "Tilapia"
     }
   }
 }

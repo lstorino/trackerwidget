@@ -126,14 +126,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       return rows.isEmpty ? [] : [("VANNAMEI 30 PCS/KG", rows)]
     case .grains:
       let cats = ["CORN", "SOYBEANS", "SOY MEAL", "SOY PROTEIN", "COTTONSEED MEAL"]
-      let grouped = Dictionary(grouping: payload.markets.filter { cats.contains($0.category) && matchesOrigin($0) },
-                               by: { $0.category })
-      return cats.compactMap { c in grouped[c].map { (c, $0.sorted { ($0.usdPerKg ?? 0) > ($1.usdPerKg ?? 0) }) } }
+      let grouped = Dictionary(grouping: payload.markets.filter {
+        cats.contains($0.category) && matchesOrigin($0) && $0.source != "CEPEA"
+      }, by: { $0.category })
+      var out: [(String, [Market])] = cats.compactMap { c in
+        grouped[c].map { (c, $0.sorted { ($0.usdPerKg ?? 0) > ($1.usdPerKg ?? 0) }) }
+      }
+      let cepeaSoy = payload.markets
+        .filter { $0.category == "SOYBEANS" && $0.source == "CEPEA" }
+        .sorted { $0.priceDate > $1.priceDate }
+      if origin == "BR" && !cepeaSoy.isEmpty {
+        out.insert(("SOYBEAN BENCHMARK · CEPEA", cepeaSoy), at: 0)
+      }
+      return out
     case .chemicals:
       let cats = ["PURE GLYCERIN", "CRUDE GLYCERIN", "LECITHINS"]
-      let grouped = Dictionary(grouping: payload.markets.filter { cats.contains($0.category) && matchesOrigin($0) },
-                               by: { $0.category })
+      let grouped = Dictionary(grouping: payload.markets.filter {
+        cats.contains($0.category) && matchesOrigin($0) && $0.source != "CEPEA"
+      }, by: { $0.category })
       return cats.compactMap { c in grouped[c].map { (c, $0.sorted { ($0.usdPerKg ?? 0) > ($1.usdPerKg ?? 0) }) } }
+    case .ethanol:
+      let rows = payload.markets.filter { $0.category == "ETHANOL" }
+        .sorted { $0.priceDate > $1.priceDate }
+      return rows.isEmpty ? [] : [("HYDROUS ETHANOL · SÃO PAULO", rows)]
+    case .tilapia:
+      let rows = payload.markets.filter { $0.category == "TILAPIA" }
+        .sorted { ($0.usdPerKg ?? 0) > ($1.usdPerKg ?? 0) }
+      return rows.isEmpty ? [] : [("TILAPIA · CEPEA WEEKLY", rows)]
     }
   }
 

@@ -10,7 +10,7 @@ enum Theme {
   static let rowFont = Font.system(size: 12, weight: .regular)
   static let obsFont = Font.system(size: 10, weight: .regular)
   static let sectionFont = Font.system(size: 10, weight: .semibold)
-  static let tabFont = Font.system(size: 11, weight: .semibold)
+  static let tabFont = Font.system(size: 9.5, weight: .semibold)
 
   static let up = Color(red: 0.37, green: 0.84, blue: 0.48)    // green
   static let down = Color(red: 1.0, green: 0.42, blue: 0.38)   // red
@@ -72,6 +72,30 @@ enum Theme {
     dim: Color.white.opacity(0.50),
     faint: Color.white.opacity(0.28),
     accent: Color(red: 0.35, green: 0.78, blue: 0.76),   // seafoam
+    activeTabBg: Color.white.opacity(0.10),
+    inactiveTabBg: Color.white.opacity(0.03)
+  )
+
+  static let ethanol = Palette(
+    background: Color(nsColor: NSColor(red: 0.15, green: 0.10, blue: 0.05, alpha: 1)),  // deep molasses brown
+    surface:   Color(nsColor: NSColor(red: 0.11, green: 0.08, blue: 0.04, alpha: 1)),
+    border: Color.white.opacity(0.10),
+    text: Color.white.opacity(0.94),
+    dim: Color.white.opacity(0.50),
+    faint: Color.white.opacity(0.28),
+    accent: Color(red: 0.91, green: 0.62, blue: 0.20),   // copper amber
+    activeTabBg: Color.white.opacity(0.10),
+    inactiveTabBg: Color.white.opacity(0.03)
+  )
+
+  static let tilapia = Palette(
+    background: Color(nsColor: NSColor(red: 0.06, green: 0.13, blue: 0.19, alpha: 1)),  // deep aqua-navy
+    surface:   Color(nsColor: NSColor(red: 0.05, green: 0.10, blue: 0.15, alpha: 1)),
+    border: Color.white.opacity(0.10),
+    text: Color.white.opacity(0.94),
+    dim: Color.white.opacity(0.50),
+    faint: Color.white.opacity(0.28),
+    accent: Color(red: 0.30, green: 0.72, blue: 0.90),   // aqua blue
     activeTabBg: Color.white.opacity(0.10),
     inactiveTabBg: Color.white.opacity(0.03)
   )
